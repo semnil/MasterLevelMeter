@@ -5,7 +5,7 @@
 Master の任意トラック (Track1..Track6) のメーター表示と、配信設定で使用される音声マスタートラックの音量が見れるようになります。
 
 ## ダウンロード
-https://github.com/ShmKnd/MasterLevelMeter/releases/tag/2025-10-04_v1.0.2
+https://github.com/ShmKnd/MasterLevelMeter/releases/tag/v1.0.2a
 
 ---
 ## インストール方法
