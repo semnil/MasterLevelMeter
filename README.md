@@ -11,13 +11,14 @@ https://github.com/ShmKnd/MasterLevelMeter/releases/tag/v1.0.3
 ## インストール方法
 
 ### macOS (.pkg インストーラー)
-ダウンロードした `MasterLevelMeter.pkg` をダブルクリックすると、macOS 標準のインストーラーが起動し、自動的に以下のパスへインストールされます：
+ダウンロードした `MasterLevelMeter.pkg` をダブルクリックすると、macOS 標準のインストーラーが起動し、自動的に以下のパスへインストールされます。
+`v1.0.3` 以降の macOS パッケージは Apple Developer ID で署名し、Apple の notarization を通したうえで stapler ticket を付与しています。
 ```
 ~/Library/Application Support/obs-studio/plugins/MasterLevelMeter.plugin/
 ```
 
 ### macOS (手動インストール)
-`MasterLevelMeter.plugin` を以下のフォルダに配置してください：
+`MasterLevelMeter_UniBinary_v1.0.3.plugin.zip` を展開し、`MasterLevelMeter.plugin` を以下のフォルダに配置してください。
 ```
 ~/Library/Application Support/obs-studio/plugins/
 ```
@@ -32,11 +33,12 @@ C:\Program Files\obs-studio\obs-plugins\64bit\MasterLevelMeter.dll
 
 ## Macユーザーへ
 本プラグインは **Apple Developer ID で署名済み** です（Developer ID Application: Shoma Kondo）。
+macOS 配布物は notarize 済みで、`MasterLevelMeter.pkg` と手動インストール用の `MasterLevelMeter.plugin` のどちらも stapler ticket を付与しています。
 macOS の Gatekeeper による「確認できないため開けません」エラーは通常発生しません。
 
 **対応アーキテクチャ:** Intel (x86_64) / Apple Silicon (arm64) のユニバーサルバイナリです。
 
-もし万が一警告が表示された場合は、システム設定 → プライバシーとセキュリティ から「それでも許可」をクリックしてください。
+もし万が一警告が表示された場合は、GitHub Releases から最新版をダウンロードし直してください。
 
 ---
 ## 使い方
@@ -102,7 +104,8 @@ cmake --install build_macos --config Release
 ```bash
 export CODESIGN_IDENT="Developer ID Application: Your Name (TEAMID)"
 export CODESIGN_TEAM="TEAMID"
-cmake --preset macos
+cmake --preset macos \
+  -DMACOS_PACKAGE_SIGN_IDENTITY="Developer ID Installer: Your Name (TEAMID)"
 ```
 
 ### Windows (PowerShell)
@@ -210,9 +213,10 @@ Double-click the downloaded `MasterLevelMeter.pkg` to launch the macOS standard 
 ```
 ~/Library/Application Support/obs-studio/plugins/MasterLevelMeter.plugin/
 ```
+macOS packages from `v1.0.3` onward are signed with Apple Developer ID, notarized by Apple, and stapled.
 
 ### macOS (Manual)
-Place `MasterLevelMeter.plugin` in:
+Extract `MasterLevelMeter_UniBinary_v1.0.3.plugin.zip`, then place `MasterLevelMeter.plugin` in:
 ```
 ~/Library/Application Support/obs-studio/plugins/
 ```
@@ -224,34 +228,13 @@ C:\Program Files\obs-studio\obs-plugins\64bit\MasterLevelMeter.dll
 Restart OBS after installing.
 (Other Qt6-based forks such as Streamlabs OBS may work, unverified.)
 
-## for Mac User IMPORTANT note
-Troubleshooting on macOS: 
-"Plugin cannot be opened because Apple cannot check it for malicious software"
+## For Mac Users
+The macOS release assets are signed with Apple Developer ID and notarized.
+Both the installer package and the manual-install plugin bundle include a stapled notarization ticket, so Gatekeeper should allow them without the older "Apple cannot check it for malicious software" workaround.
 
-When you install MasterLevelMeter.plugin on macOS, you may see a warning such as:
+**Supported architectures:** Universal binary for Intel (x86_64) and Apple Silicon (arm64).
 
-“MasterLevelMeter.plugin” can’t be opened because Apple cannot check it for malicious software.
-
-This happens because the plugin is not signed with the Apple Developer Program.
-It is safe to use if you trust the source. Follow these steps to allow the plugin:
-
-1.Install the plugin
-
-2.Launch OBS
-*The plugin will be blocked by macOS and you will see a warning dialog.
-Close the dialog with OK.
-
-3.Allow the plugin in System Settings
-Open System Settings → Privacy & Security.
-
-Scroll down until you see a message like:
-“MasterLevelMeter.plugin was blocked because it is not from an identified developer.”
-
-Click Allow Anyway.
-
-4.Restart OBS
-The next time you launch OBS, you will be asked if you really want to open the plugin.
-Click Open. From now on, the plugin will load automatically.
+If macOS still shows a security warning, download the latest release asset again from GitHub Releases and reinstall it.
 
 ---
 ## Usage
@@ -314,7 +297,8 @@ To enable code signing, set environment variables before configuring:
 ```bash
 export CODESIGN_IDENT="Developer ID Application: Your Name (TEAMID)"
 export CODESIGN_TEAM="TEAMID"
-cmake --preset macos
+cmake --preset macos \
+  -DMACOS_PACKAGE_SIGN_IDENTITY="Developer ID Installer: Your Name (TEAMID)"
 ```
 
 ### Windows (PowerShell)
