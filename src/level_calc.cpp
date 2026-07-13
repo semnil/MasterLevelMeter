@@ -53,8 +53,7 @@ void LevelCalc::setChannels(size_t channels) {
 
 void LevelCalc::initFiltersIfNeeded(size_t channels) {
     shelfFilters_.resize(channels);
-    hp1Filters_.resize(channels);
-    hp2Filters_.resize(channels);
+    hpFilters_.resize(channels);
 }
 
 void LevelCalc::resetBlockAccumulators() {
@@ -77,41 +76,49 @@ void LevelCalc::updateFilterCoeffs() {
     uint32_t fs = sampleRate_.load(std::memory_order_relaxed);
     if (fs == 0 || channels_ == 0) return;
 
-    // 1st-order HP 2段 @60 Hz
-    const float fc_hp = 60.f;
-    float K = static_cast<float>(fs) / (static_cast<float>(M_PI) * fc_hp);
-    float b0_hp = K / (K + 1.0f);
-    float b1_hp = -b0_hp;
-    float a1_hp = (1.0f - K) / (1.0f + K);
-    for (size_t ch = 0; ch < channels_; ++ch) {
-        hp1Filters_[ch].setCoeffs(b0_hp, b1_hp, a1_hp);
-        hp2Filters_[ch].setCoeffs(b0_hp, b1_hp, a1_hp);
-        hp1Filters_[ch].reset();
-        hp2Filters_[ch].reset();
+    // ITU-R BS.1770 stage 1: high-shelf pre-filter (+4 dB @ ~1.7 kHz)
+    {
+        const double f0 = 1681.974450955533;
+        const double G  = 3.999843853973347;
+        const double Q  = 0.7071752369554193;
+        double K  = std::tan(M_PI * f0 / static_cast<double>(fs));
+        double Vh = std::pow(10.0, G / 20.0);
+        double Vb = std::pow(Vh, 0.4996667741545416);
+        double a0 = 1.0 + K / Q + K * K;
+        float sb0 = static_cast<float>((Vh + Vb * K / Q + K * K) / a0);
+        float sb1 = static_cast<float>(2.0 * (K * K - Vh) / a0);
+        float sb2 = static_cast<float>((Vh - Vb * K / Q + K * K) / a0);
+        float sa1 = static_cast<float>(2.0 * (K * K - 1.0) / a0);
+        float sa2 = static_cast<float>((1.0 - K / Q + K * K) / a0);
+        for (size_t ch = 0; ch < channels_; ++ch) {
+            shelfFilters_[ch].b0 = sb0;
+            shelfFilters_[ch].b1 = sb1;
+            shelfFilters_[ch].b2 = sb2;
+            shelfFilters_[ch].a1 = sa1;
+            shelfFilters_[ch].a2 = sa2;
+            shelfFilters_[ch].reset();
+        }
     }
 
-    // High-shelf +4 dB @ ~1.7kHz
-    const float gainDb = 4.0f;
-    const float f0 = 1681.974f;
-    float A = std::sqrt(std::pow(10.0f, gainDb / 20.0f));
-    float w0 = 2.0f * static_cast<float>(M_PI) * f0 / static_cast<float>(fs);
-    float cw = std::cos(w0);
-    float sw = std::sin(w0);
-    float alpha = sw * std::sqrt(2.0f) * 0.5f;
-    float a0 = (A + 1.0f) - (A - 1.0f) * cw + 2.0f * std::sqrt(A) * alpha;
-    float b0 = A * ((A + 1.0f) + (A - 1.0f) * cw + 2.0f * std::sqrt(A) * alpha) / a0;
-    float b1 = -2.0f * A * ((A - 1.0f) + (A + 1.0f) * cw) / a0;
-    float b2 = A * ((A + 1.0f) + (A - 1.0f) * cw - 2.0f * std::sqrt(A) * alpha) / a0;
-    float a1 =  2.0f * ((A - 1.0f) - (A + 1.0f) * cw) / a0;
-    float a2 = ((A + 1.0f) - (A - 1.0f) * cw - 2.0f * std::sqrt(A) * alpha) / a0;
-
-    for (size_t ch = 0; ch < channels_; ++ch) {
-        shelfFilters_[ch].b0 = b0;
-        shelfFilters_[ch].b1 = b1;
-        shelfFilters_[ch].b2 = b2;
-        shelfFilters_[ch].a1 = a1;
-        shelfFilters_[ch].a2 = a2;
-        shelfFilters_[ch].reset();
+    // ITU-R BS.1770 stage 2: 2nd-order Butterworth high-pass @ 38.135 Hz
+    {
+        const double f0 = 38.13547087602444;
+        const double Q  = 0.5003270373238773;
+        double K  = std::tan(M_PI * f0 / static_cast<double>(fs));
+        double a0 = 1.0 + K / Q + K * K;
+        float hb0 = static_cast<float>(1.0 / a0);
+        float hb1 = static_cast<float>(-2.0 / a0);
+        float hb2 = static_cast<float>(1.0 / a0);
+        float ha1 = static_cast<float>(2.0 * (K * K - 1.0) / a0);
+        float ha2 = static_cast<float>((1.0 - K / Q + K * K) / a0);
+        for (size_t ch = 0; ch < channels_; ++ch) {
+            hpFilters_[ch].b0 = hb0;
+            hpFilters_[ch].b1 = hb1;
+            hpFilters_[ch].b2 = hb2;
+            hpFilters_[ch].a1 = ha1;
+            hpFilters_[ch].a2 = ha2;
+            hpFilters_[ch].reset();
+        }
     }
 }
 
@@ -145,8 +152,7 @@ void LevelCalc::process(float **data, uint32_t frames, size_t channels) {
             sumSqrPerCh[ch] += static_cast<double>(s) * static_cast<double>(s);
 
             // K-weighting
-            float y = hp1Filters_[ch].process(s);
-            y = hp2Filters_[ch].process(y);
+            float y = hpFilters_[ch].process(s);
             float y2 = shelfFilters_[ch].process(y);
 
             if (ch < sumSquaresHop_.size())

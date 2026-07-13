@@ -68,19 +68,8 @@ private:
     std::atomic<uint32_t> sampleRate_;
     size_t channels_ = 0;
 
-    // K-weighting フィルタ
-    struct FirstOrderHP {
-        float b0 = 0.f, b1 = 0.f, a1 = 0.f;
-        float x1 = 0.f, y1 = 0.f;
-        void setCoeffs(float b0_, float b1_, float a1_) { b0 = b0_; b1 = b1_; a1 = a1_; }
-        inline float process(float x) {
-            float y = b0 * x + b1 * x1 - a1 * y1;
-            x1 = x; y1 = y;
-            return y;
-        }
-        void reset() { x1 = 0.f; y1 = 0.f; }
-    };
-    struct BiquadHS {
+    // K-weighting フィルタ (ITU-R BS.1770 stage 1: high-shelf, stage 2: high-pass)
+    struct Biquad {
         float b0 = 1.f, b1 = 0.f, b2 = 0.f, a1 = 0.f, a2 = 0.f;
         float x1 = 0.f, x2 = 0.f, y1 = 0.f, y2 = 0.f;
         inline float process(float x) {
@@ -90,9 +79,8 @@ private:
         }
         void reset() { x1 = x2 = y1 = y2 = 0.f; }
     };
-    std::vector<BiquadHS> shelfFilters_;
-    std::vector<FirstOrderHP> hp1Filters_;
-    std::vector<FirstOrderHP> hp2Filters_;
+    std::vector<Biquad> shelfFilters_;
+    std::vector<Biquad> hpFilters_;
 
     // 100ms hop / 400ms window
     uint32_t hopSamples_ = 0;
