@@ -5,7 +5,7 @@
 Master の任意トラック (Track1..Track6) のメーター表示と、配信設定で使用される音声マスタートラックの音量が見れるようになります。
 
 ## ダウンロード
-https://github.com/ShmKnd/MasterLevelMeter/releases/tag/v1.0.2a
+https://github.com/ShmKnd/MasterLevelMeter/releases/tag/v1.0.3
 
 ---
 ## インストール方法
@@ -55,7 +55,7 @@ macOS の Gatekeeper による「確認できないため開けません」エ�
 - Peak
 - Short LUFS (3秒 ITU-R BS.1770 K-weighted 処理)
 - K-weighting フィルタ:
-- 二段ハイパス (60Hz) + High-shelf (+4 dB @ ~1.7 kHz) 実装
+- ITU-R BS.1770 準拠の high-pass + high-shelf K-weighting 実装
 - -23 / -18 LUFS 強調目盛り
 - Dock対応
 - Streaming 設定から現在利用されるトラックの表示更新
@@ -201,7 +201,7 @@ It also visualizes which audio tracks are currently selected in the streaming (O
 
 ---
 ## Downloads
-https://github.com/ShmKnd/MasterLevelMeter/releases/tag/2025-10-04_v1.0.2
+https://github.com/ShmKnd/MasterLevelMeter/releases/tag/v1.0.3
 
 ## Installation
 
@@ -270,7 +270,7 @@ Click Open. From now on, the plugin will load automatically.
 - Peak
 - Short LUFS (3000 ms ITU-R BS.1770 K-weighted)
 - K-weighting filter:
-- Two-stage high-pass (60 Hz) + high-shelf (+4 dB @ ~1.7 kHz)
+- ITU-R BS.1770 compliant high-pass + high-shelf K-weighting
 - Emphasis ticks at -23 / -18 LUFS
 - Dock compatible
 - Detects and shows which tracks are used for streaming (updates every 1 s)

@@ -4,12 +4,13 @@ cmake_minimum_required(VERSION 3.28...3.30)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
 
 project(MasterLevelMeter
-  VERSION 1.0.2
+  VERSION 1.0.3
   LANGUAGES C CXX
 )
 
 option(ENABLE_FRONTEND_API "Use obs-frontend-api for UI functionality" ON)
 option(ENABLE_QT "Use Qt functionality" ON)
+set(MACOS_PACKAGE_SIGN_IDENTITY "" CACHE STRING "Developer ID Installer identity for signing macOS packages")
 
 include(compilerconfig)
 include(defaults)
@@ -33,6 +34,14 @@ endif()
 # Qt
 if(ENABLE_QT)
   find_package(Qt6 COMPONENTS Widgets Core REQUIRED)
+  if(APPLE AND TARGET WrapOpenGL::WrapOpenGL)
+    get_target_property(_wrap_opengl_libraries WrapOpenGL::WrapOpenGL INTERFACE_LINK_LIBRARIES)
+    if(_wrap_opengl_libraries)
+      list(REMOVE_ITEM _wrap_opengl_libraries "/System/Library/Frameworks/AGL.framework" "-framework AGL")
+      set_target_properties(WrapOpenGL::WrapOpenGL PROPERTIES INTERFACE_LINK_LIBRARIES "${_wrap_opengl_libraries}")
+    endif()
+    unset(_wrap_opengl_libraries)
+  endif()
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt6::Core Qt6::Widgets)
   target_compile_options(
     ${CMAKE_PROJECT_NAME}

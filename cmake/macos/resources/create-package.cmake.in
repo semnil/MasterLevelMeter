@@ -18,10 +18,16 @@ execute_process(
     COMMAND_ERROR_IS_FATAL ANY
   )
 
+set(productbuild_sign_args "")
+if(NOT "@MACOS_PACKAGE_SIGN_IDENTITY@" STREQUAL "")
+  list(APPEND productbuild_sign_args --sign "@MACOS_PACKAGE_SIGN_IDENTITY@")
+endif()
+
 execute_process(
   COMMAND /usr/bin/productbuild
     --distribution "@CMAKE_CURRENT_BINARY_DIR@/distribution"
     --package-path "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/temp"
+    ${productbuild_sign_args}
     "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/@CMAKE_PROJECT_NAME@.pkg"
     COMMAND_ERROR_IS_FATAL ANY)
 
